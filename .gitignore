@@ -1,3 +1,5 @@
 .omc/
 *.exe
 .vscode/
+*.pdf
+*.pptx
