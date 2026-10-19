@@ -1,0 +1,89 @@
+<div id="la011-line-plane">
+  <style>
+    #la011-line-plane .legend-plane { color: var(--viz-series-1); }
+    #la011-line-plane .legend-line { color: var(--viz-series-2); }
+    #la011-line-plane svg { display: block; width: 100%; overflow: visible; }
+    #la011-line-plane svg text { fill: var(--foreground); }
+    #la011-line-plane .plane { fill: var(--viz-series-1); fill-opacity: .13; stroke: var(--viz-series-1); stroke-width: 1.6; }
+    #la011-line-plane .line { fill: none; stroke: var(--viz-series-2); stroke-width: 2.6; stroke-linecap: round; }
+    #la011-line-plane .guide { fill: none; stroke: var(--muted-foreground); stroke-width: 1; }
+  </style>
+  <div class="viz-row">
+    <span><span class="legend-plane" aria-hidden="true">▱</span> 평면 P</span>
+    <span><span class="legend-line" aria-hidden="true">━</span> 직선 ℓ</span>
+  </div>
+  <div class="viz-grid">
+    <div><div class="text-center">(1)</div><svg role="img" aria-label="선택지 1의 평면 P와 직선 ℓ"></svg></div>
+    <div><div class="text-center">(2)</div><svg role="img" aria-label="선택지 2의 평면 P와 직선 ℓ"></svg></div>
+    <div><div class="text-center">(3)</div><svg role="img" aria-label="선택지 3의 평면 P와 직선 ℓ"></svg></div>
+  </div>
+</div>
+<script>
+(() => {
+  const root = document.getElementById('la011-line-plane');
+  const panels = Array.from(root.querySelectorAll('svg'));
+  const ns = 'http://www.w3.org/2000/svg';
+  function draw(svg, index) {
+    const width = svg.parentElement.clientWidth;
+    if (!width) return;
+    const height = width * .86;
+    svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+    svg.setAttribute('height', height);
+    svg.replaceChildren();
+    function add(name, attrs, text) {
+      const node = document.createElementNS(ns, name);
+      Object.entries(attrs).forEach(([key, value]) => node.setAttribute(key, value));
+      if (text) node.textContent = text;
+      svg.appendChild(node);
+      return node;
+    }
+    const point = (x, y) => [x * width, y * height];
+    const points = values => values.map(([x, y]) => point(x, y).join(',')).join(' ');
+    function segment(a, b, klass, extra = {}) {
+      const [x1, y1] = point(...a), [x2, y2] = point(...b);
+      return add('line', { x1, y1, x2, y2, class: klass, ...extra });
+    }
+    function label(x, y, text) {
+      const [px, py] = point(x, y);
+      add('text', { x: px, y: py }, text);
+    }
+    function arrowhead(tip, tail) {
+      const [tx, ty] = point(...tip), [sx, sy] = point(...tail);
+      const angle = Math.atan2(ty - sy, tx - sx), size = 7;
+      const a = [tx - size * Math.cos(angle - .5), ty - size * Math.sin(angle - .5)];
+      const b = [tx - size * Math.cos(angle + .5), ty - size * Math.sin(angle + .5)];
+      add('polyline', { points: `${a.join(',')} ${tx},${ty} ${b.join(',')}`, class: 'line' });
+    }
+    function doubleArrow(a, b) {
+      segment(a, b, 'line');
+      arrowhead(a, b);
+      arrowhead(b, a);
+    }
+    add('polygon', { points: points([[.12,.70],[.78,.70],[.94,.40],[.28,.40]]), class: 'plane' });
+    label(.14, .79, 'P');
+    if (index === 0) {
+      doubleArrow([.05,.55], [.96,.55]);
+      label(.92, .49, 'ℓ');
+    } else if (index === 1) {
+      segment([.57,.22], [.57,.55], 'guide', { 'stroke-dasharray': '3 4' });
+      add('polyline', { points: points([[.57,.50],[.62,.50],[.62,.55]]), class: 'guide' });
+      doubleArrow([.05,.22], [.96,.22]);
+      label(.92, .16, 'ℓ');
+    } else {
+      const center = [.55,.55], low = [.42,.90], high = [.72,.09];
+      segment(center, low, 'line', { 'stroke-dasharray': '6 5' });
+      segment(center, high, 'line');
+      arrowhead(low, center);
+      arrowhead(high, center);
+      const [cx, cy] = point(...center);
+      add('circle', { cx, cy, r: 3, fill: 'var(--viz-series-2)' });
+      label(.78, .16, 'ℓ');
+    }
+  }
+  const observer = new ResizeObserver(() => panels.forEach(draw));
+  panels.forEach((svg, index) => {
+    observer.observe(svg.parentElement);
+    draw(svg, index);
+  });
+})();
+</script>
